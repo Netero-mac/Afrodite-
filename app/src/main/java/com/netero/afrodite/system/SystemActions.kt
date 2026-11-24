@@ -60,7 +60,7 @@ object SystemActions {
      */
     @SuppressLint("WrongConstant", "PrivateApi")
     fun expandNotifications(context: Context) {
-        if (LockAccessibilityService.openNotifications()) return
+        if (AccessibilityBridge.openNotifications()) return
         try {
             val service = context.getSystemService("statusbar") ?: return
             Class.forName("android.app.StatusBarManager")
@@ -71,14 +71,15 @@ object SystemActions {
         }
     }
 
-    /** Bloqueia a tela pelo serviço de acessibilidade, avisando o usuário se não der. */
+    /**
+     * Bloqueia a tela.
+     * 1º pelo serviço de acessibilidade (versão "completo"; mantém a digital);
+     * 2º pelo administrador do dispositivo (funciona nas duas versões).
+     */
     fun lockScreen(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            context.toast("O bloqueio por toque duplo precisa do Android 9 ou mais novo")
-            return false
-        }
-        if (LockAccessibilityService.lockScreen()) return true
-        context.toast("Ative o serviço de acessibilidade do Afrodite nas configurações")
+        if (AccessibilityBridge.lockScreen()) return true
+        if (DeviceLock.lock(context)) return true
+        context.toast("Permita o bloqueio em Configurações › Gestos")
         return false
     }
 

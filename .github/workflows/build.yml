@@ -35,19 +35,23 @@ jobs:
       - name: Rodar os testes de unidade
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest --stacktrace
+          ./gradlew testPadraoDebugUnitTest --stacktrace
 
-      - name: Compilar o APK (debug)
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Compilar os APKs (padrão e completo)
+        run: ./gradlew assemblePadraoDebug assembleCompletoDebug --stacktrace
 
-      - name: Renomear o APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Afrodite-debug.apk
+      - name: Renomear os APKs
+        run: |
+          cp app/build/outputs/apk/padrao/debug/app-padrao-debug.apk Afrodite.apk
+          cp app/build/outputs/apk/completo/debug/app-completo-debug.apk Afrodite-completo.apk
 
-      - name: Guardar o APK como artefato
+      - name: Guardar os APKs como artefato
         uses: actions/upload-artifact@v6
         with:
-          name: Afrodite-debug
-          path: Afrodite-debug.apk
+          name: Afrodite-apks
+          path: |
+            Afrodite.apk
+            Afrodite-completo.apk
 
       - name: Publicar na release "ultima-versao" (link direto)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -55,8 +59,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete ultima-versao --cleanup-tag --yes || true
-          gh release create ultima-versao Afrodite-debug.apk \
+          gh release create ultima-versao Afrodite.apk Afrodite-completo.apk \
             --title "Afrodite — última versão" \
-            --notes "APK debug gerado automaticamente a partir do commit ${GITHUB_SHA::7}." \
+            --notes "Gerado automaticamente a partir do commit ${GITHUB_SHA::7}. **Afrodite.apk**: instale este pelo celular. **Afrodite-completo.apk**: só pelo computador (adb install), veja o README." \
             --target "$GITHUB_SHA" \
             --latest

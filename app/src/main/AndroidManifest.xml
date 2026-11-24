@@ -53,18 +53,22 @@
             </intent-filter>
         </activity>
 
-        <!-- Serviço de acessibilidade: usado só para bloquear a tela (toque duplo) e abrir as notificações -->
-        <service
-            android:name=".system.LockAccessibilityService"
+        <!--
+            "Administrador do dispositivo" só com a política de bloquear a tela (toque duplo).
+            A versão "completo" adiciona também um serviço de acessibilidade (src/completo).
+        -->
+        <receiver
+            android:name=".system.LockAdminReceiver"
+            android:description="@string/device_admin_description"
             android:exported="true"
-            android:label="@string/accessibility_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -55,7 +55,8 @@ import androidx.compose.ui.unit.sp
 import com.netero.afrodite.BuildConfig
 import com.netero.afrodite.data.GoldTone
 import com.netero.afrodite.data.LauncherSettings
-import com.netero.afrodite.system.LockAccessibilityService
+import com.netero.afrodite.system.AccessibilityBridge
+import com.netero.afrodite.system.DeviceLock
 import com.netero.afrodite.system.SystemActions
 import com.netero.afrodite.ui.LauncherUiState
 import com.netero.afrodite.ui.LauncherViewModel
@@ -70,7 +71,6 @@ import com.netero.afrodite.ui.theme.Black
 import com.netero.afrodite.ui.theme.LocalGold
 import com.netero.afrodite.ui.theme.TextGray
 import com.netero.afrodite.ui.theme.palette
-import com.netero.afrodite.util.toast
 
 /** Tela de configurações. Tudo é salvo na hora (DataStore). */
 @Composable
@@ -85,14 +85,21 @@ fun SettingsScreen(
 
     var picker by remember { mutableStateOf<PickerRequest?>(null) }
     var showLockExplanation by remember { mutableStateOf(false) }
-    var serviceActive by remember { mutableStateOf(LockAccessibilityService.isRunning) }
+    var serviceActive by remember { mutableStateOf(AccessibilityBridge.isRunning) }
+    var adminActive by remember { mutableStateOf(DeviceLock.isActive(context)) }
     var isDefault by remember { mutableStateOf(SystemActions.isDefaultLauncher(context)) }
 
-    // Ao voltar das telas do Android (acessibilidade, app de início), atualiza o status.
+    // Ao voltar das telas do Android (acessibilidade, administrador, app de início), atualiza o status.
     OnResume {
-        serviceActive = LockAccessibilityService.isRunning
+        serviceActive = AccessibilityBridge.isRunning
+        adminActive = DeviceLock.isActive(context)
         isDefault = SystemActions.isDefaultLauncher(context)
     }
+
+    // Versão "completo" no Android 9+: bloqueia pela acessibilidade (mantém a digital).
+    // Versão "padrão": bloqueia pelo administrador do dispositivo.
+    val useAccessibility = BuildConfig.HAS_ACCESSIBILITY && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+    val lockReady = serviceActive || adminActive
 
     fun appLabel(key: String): String = state.appsByKey[key]?.label ?: "nenhum"
 
@@ -236,24 +243,28 @@ fun SettingsScreen(
             SettingSwitch(
                 title = "Toque duplo para bloquear",
                 subtitle = when {
-                    !settings.doubleTapLock -> "usa um serviço de acessibilidade"
-                    serviceActive -> "serviço de acessibilidade ativo"
-                    else -> "falta ativar o serviço em Acessibilidade"
+                    !settings.doubleTapLock -> "toque duas vezes na tela inicial para bloquear"
+                    serviceActive -> "ativo (serviço de acessibilidade)"
+                    adminActive -> "ativo (o próximo desbloqueio pede o PIN)"
+                    else -> "falta permitir o bloqueio"
                 },
                 checked = settings.doubleTapLock,
                 onCheckedChange = { enable ->
-                    when {
-                        !enable -> viewModel.setDoubleTapLock(false)
-                        Build.VERSION.SDK_INT < Build.VERSION_CODES.P ->
-                            context.toast("O bloqueio por toque duplo precisa do Android 9 ou mais novo")
-                        serviceActive -> viewModel.setDoubleTapLock(true)
-                        else -> showLockExplanation = true
+                    if (!enable) {
+                        viewModel.setDoubleTapLock(false)
+                        // Tira a autorização de administrador: assim o app pode ser desinstalado normalmente.
+                        DeviceLock.deactivate(context)
+                        adminActive = false
+                    } else if (lockReady) {
+                        viewModel.setDoubleTapLock(true)
+                    } else {
+                        showLockExplanation = true
                     }
                 },
             )
-            if (settings.doubleTapLock && !serviceActive) {
+            if (settings.doubleTapLock && !lockReady) {
                 SettingRow(
-                    title = "Ativar serviço de acessibilidade",
+                    title = "Permitir o bloqueio",
                     value = "abrir",
                     indent = true,
                     onClick = { showLockExplanation = true },
@@ -289,23 +300,41 @@ fun SettingsScreen(
             }
         }
 
-        // Explicação antes de mandar o usuário para a tela de acessibilidade
+        // Explicação antes de mandar o usuário para a tela do Android que dá a permissão
         if (showLockExplanation) {
-            GoldConfirmDialog(
-                title = "Bloquear com toque duplo",
-                message = "O Android só permite que um launcher bloqueie a tela por meio de um " +
-                    "serviço de acessibilidade.\n\nO serviço do Afrodite serve apenas para bloquear " +
-                    "a tela e abrir as notificações. Ele não lê o que aparece na tela, não registra o " +
-                    "que você digita e não coleta nenhum dado.\n\nNa próxima tela, toque em " +
-                    "\"Afrodite · bloqueio de tela\" e ative.",
-                confirmText = "Abrir acessibilidade",
-                onConfirm = {
-                    showLockExplanation = false
-                    viewModel.setDoubleTapLock(true)
-                    SystemActions.openAccessibilitySettings(context)
-                },
-                onDismiss = { showLockExplanation = false },
-            )
+            if (useAccessibility) {
+                GoldConfirmDialog(
+                    title = "Bloquear com toque duplo",
+                    message = "O Afrodite bloqueia a tela por meio de um serviço de acessibilidade.\n\n" +
+                        "Ele serve apenas para bloquear a tela e abrir as notificações. Não lê o que " +
+                        "aparece na tela, não registra o que você digita e não coleta nenhum dado.\n\n" +
+                        "Na próxima tela, toque em \"Afrodite · bloqueio de tela\" e ative.",
+                    confirmText = "Abrir acessibilidade",
+                    onConfirm = {
+                        showLockExplanation = false
+                        viewModel.setDoubleTapLock(true)
+                        SystemActions.openAccessibilitySettings(context)
+                    },
+                    onDismiss = { showLockExplanation = false },
+                )
+            } else {
+                GoldConfirmDialog(
+                    title = "Bloquear com toque duplo",
+                    message = "Para bloquear a tela, o Android pede que o Afrodite seja autorizado como " +
+                        "\"app de administração do dispositivo\". Ele usa só a permissão de bloquear a " +
+                        "tela: não apaga dados, não muda senhas e não vê nada.\n\n" +
+                        "Limitação do Android: depois de bloquear pelo toque duplo, a maioria dos " +
+                        "celulares pede o PIN ou a senha no desbloqueio seguinte, em vez da digital.\n\n" +
+                        "Para desinstalar o Afrodite no futuro, desligue esta opção antes.",
+                    confirmText = "Permitir",
+                    onConfirm = {
+                        showLockExplanation = false
+                        viewModel.setDoubleTapLock(true)
+                        DeviceLock.requestActivation(context)
+                    },
+                    onDismiss = { showLockExplanation = false },
+                )
+            }
         }
     }
 }

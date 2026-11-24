@@ -15,27 +15,40 @@ Feito em **Kotlin + Jetpack Compose**, arquitetura **MVVM**, `minSdk 26` (Androi
 
 ## Instalar o APK no celular
 
-Todo push na branch `main` gera um APK novo pelo GitHub Actions.
+Todo push na branch `main` gera os APKs pelo GitHub Actions. Existem **duas versões** do mesmo app:
 
-### Opção 1: link direto (mais fácil)
+| Versão | Arquivo | Como instalar | Toque duplo bloqueia a tela por… |
+|---|---|---|---|
+| **Padrão** (recomendada) | `Afrodite.apk` | Direto pelo celular | Administrador do dispositivo (o próximo desbloqueio pede o PIN) |
+| **Completa** | `Afrodite-completo.apk` | Pelo computador (`adb install`) | Serviço de acessibilidade (a digital continua funcionando) |
+
+> **Por que duas?** No Brasil, o Google Play Protect bloqueia qualquer APK baixado pelo navegador que tenha um serviço de acessibilidade, sem opção de "instalar mesmo assim". A versão padrão não tem esse serviço e instala normalmente. A completa tem, então só instala pelo computador.
+
+### Versão padrão (pelo celular)
 
 1. No celular, abra:
-   **https://github.com/Netero-mac/Afrodite-/releases/download/ultima-versao/Afrodite-debug.apk**
+   **https://github.com/Netero-mac/Afrodite-/releases/download/ultima-versao/Afrodite.apk**
 2. Toque no arquivo baixado.
-3. Se o Android pedir, permita **"Instalar apps desconhecidos"** para o navegador ou o app de arquivos (ele leva você direto à opção).
-4. Toque em **Instalar**.
+3. Se o Android pedir, permita **"Instalar apps desconhecidos"** para o navegador ou o app de arquivos.
+4. Toque em **Instalar**. Se o Play Protect sugerir uma verificação, pode deixar verificar.
 
-A página de todas as versões fica em [Releases](https://github.com/Netero-mac/Afrodite-/releases).
+### Versão completa (pelo computador)
 
-### Opção 2: pelo artefato do Actions
+1. Baixe **https://github.com/Netero-mac/Afrodite-/releases/download/ultima-versao/Afrodite-completo.apk** no computador.
+2. No celular, ative as **Opções do desenvolvedor** (toque 7 vezes em *Sobre o telefone › Número da versão*) e ligue a **Depuração USB**.
+3. Conecte o cabo e rode no terminal:
+   ```bash
+   adb install -r Afrodite-completo.apk
+   ```
+   (No Linux, o `adb` vem no pacote `android-tools-adb` ou `adb`.)
 
-1. Abra a aba **Actions** do repositório e entre na execução mais recente de **Gerar APK**.
-2. Em **Artifacts**, baixe **Afrodite-debug** (vem em um `.zip`).
-3. Extraia o `.zip` e instale o `Afrodite-debug.apk` como na opção 1.
+As duas versões têm o mesmo identificador e a mesma assinatura: dá para trocar de uma para a outra instalando por cima, sem perder as configurações.
 
 ### Atualizar
 
 É só instalar o APK novo por cima. Todos os builds usam a mesma chave de assinatura (`app/afrodite-debug.keystore`), então o Android aceita a atualização e as suas configurações continuam.
+
+A página de todas as versões fica em [Releases](https://github.com/Netero-mac/Afrodite-/releases). Os APKs também ficam na aba **Actions**, em **Artifacts › Afrodite-apks**.
 
 ---
 
@@ -44,7 +57,9 @@ A página de todas as versões fica em [Releases](https://github.com/Netero-mac/
 1. Abra o **Afrodite**. Na primeira vez, ele pede para ser definido como tela inicial padrão: toque em **Definir como padrão** e escolha o Afrodite.
    Se quiser trocar depois, vá em *Configurações do Android › Apps › Apps padrão › App de início*.
 2. **Toque longo** em qualquer lugar da tela inicial abre as configurações. Lá você escolhe os favoritos, o dock, os gestos e a aparência.
-3. Para o **toque duplo bloquear a tela**, ative a opção nas configurações. O Afrodite explica o motivo e abre a tela de Acessibilidade, onde você liga o serviço **"Afrodite · bloqueio de tela"**. Esse recurso precisa do Android 9 ou mais novo.
+3. Para o **toque duplo bloquear a tela**, ative a opção em *Configurações › Gestos*. O Afrodite explica o que vai pedir e abre a tela do Android certa:
+   - **versão padrão:** autorizar o Afrodite como *app de administração do dispositivo*, só com a permissão de bloquear a tela. Depois de bloquear assim, a maioria dos celulares pede o PIN no desbloqueio seguinte. **Para desinstalar**, desligue a opção antes, porque o Android não desinstala um app que é administrador;
+   - **versão completa (Android 9+):** ligar o serviço **"Afrodite · bloqueio de tela"** em Acessibilidade. A digital continua funcionando.
 
 ## Gestos
 
@@ -76,14 +91,15 @@ Requisitos: **JDK 17** e **Android SDK 35** (o Android Studio já instala os doi
 ```bash
 git clone https://github.com/Netero-mac/Afrodite-.git
 cd Afrodite-
-./gradlew assembleDebug          # gera app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest      # roda os testes de unidade
+./gradlew assemblePadraoDebug      # gera app/build/outputs/apk/padrao/debug/app-padrao-debug.apk
+./gradlew assembleCompletoDebug    # versão com acessibilidade
+./gradlew testPadraoDebugUnitTest  # roda os testes de unidade
 ```
 
 Com o celular conectado por USB (depuração USB ligada):
 
 ```bash
-./gradlew installDebug
+./gradlew installPadraoDebug     # ou installCompletoDebug
 ```
 
 Ou abra a pasta no Android Studio e clique em ▶ Run.
@@ -103,7 +119,8 @@ app/src/main/java/com/netero/afrodite/
 │   └── SettingsRepository.kt   # leitura e gravação com DataStore
 ├── system/
 │   ├── SystemActions.kt        # abrir apps, notificações, telas do Android
-│   └── LockAccessibilityService.kt  # bloqueio de tela por toque duplo
+│   ├── DeviceLock.kt           # bloqueio pelo administrador do dispositivo
+│   └── AccessibilityBridge.kt  # ponte para o serviço de acessibilidade (se existir)
 ├── ui/
 │   ├── LauncherViewModel.kt    # ViewModel único (MVVM)
 │   ├── AfroditeRoot.kt         # empilha as telas e as animações
@@ -114,6 +131,8 @@ app/src/main/java/com/netero/afrodite/
 │   ├── components/             # ícone, seletor de apps, campo de busca etc.
 │   └── theme/                  # cores, fonte e tema
 └── util/                       # busca sem acentos, toast
+
+app/src/completo/               # só na versão completa: serviço de acessibilidade
 ```
 
 ### Como ficou rápido e leve
@@ -136,7 +155,8 @@ app/src/main/java/com/netero/afrodite/
 | `EXPAND_STATUS_BAR` | Abrir as notificações com o gesto de deslizar para baixo |
 | `REQUEST_DELETE_PACKAGES` | Abrir a tela de desinstalação do Android |
 | `<queries>` com `LAUNCHER` | Enxergar os apps que têm ícone (Android 11+) |
-| Serviço de acessibilidade (opcional) | Só bloqueia a tela e abre as notificações. Não lê a tela e não coleta dados |
+| Administrador do dispositivo (opcional) | Só a política `force-lock`: bloquear a tela no toque duplo |
+| Serviço de acessibilidade (opcional, só na versão completa) | Só bloqueia a tela e abre as notificações. Não lê a tela e não coleta dados |
 
 ## Observações
 

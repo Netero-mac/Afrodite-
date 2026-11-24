@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Afrodite</string>
-    <string name="accessibility_service_label">Afrodite · bloqueio de tela</string>
-    <string name="accessibility_service_description">O Afrodite usa este serviço apenas para bloquear a tela quando você toca duas vezes na tela inicial e para abrir a barra de notificações. Ele não lê o conteúdo da tela, não registra o que você digita e não coleta nenhum dado.</string>
+    <string name="device_admin_label">Afrodite · bloqueio de tela</string>
+    <string name="device_admin_description">Permite que o Afrodite bloqueie a tela quando você toca duas vezes na tela inicial. O Afrodite usa só essa permissão: não apaga dados, não muda senhas e não vê nada do celular.</string>
 </resources>

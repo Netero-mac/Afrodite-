@@ -12,8 +12,28 @@ android {
         applicationId = "com.netero.afrodite"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+    }
+
+    // Duas versões do mesmo app (mesmo applicationId, uma instala por cima da outra):
+    // - padrao:   sem serviço de acessibilidade. Instala normalmente pelo navegador.
+    //             O toque duplo bloqueia via "administrador do dispositivo".
+    // - completo: com serviço de acessibilidade (bloqueio que mantém a digital).
+    //             O Google Play Protect bloqueia APKs assim quando baixados pelo navegador,
+    //             então esta versão deve ser instalada pelo computador (adb install).
+    flavorDimensions += "versao"
+    productFlavors {
+        create("padrao") {
+            dimension = "versao"
+            isDefault = true
+            buildConfigField("boolean", "HAS_ACCESSIBILITY", "false")
+        }
+        create("completo") {
+            dimension = "versao"
+            versionNameSuffix = "-completo"
+            buildConfigField("boolean", "HAS_ACCESSIBILITY", "true")
+        }
     }
 
     signingConfigs {
