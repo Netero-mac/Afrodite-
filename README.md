@@ -20,12 +20,12 @@ Todo push na branch `main` gera um APK novo pelo GitHub Actions.
 ### Opção 1: link direto (mais fácil)
 
 1. No celular, abra:
-   **https://github.com/Netero-mac/afrodite-/releases/download/ultima-versao/Afrodite-debug.apk**
+   **https://github.com/Netero-mac/Afrodite-/releases/download/ultima-versao/Afrodite-debug.apk**
 2. Toque no arquivo baixado.
 3. Se o Android pedir, permita **"Instalar apps desconhecidos"** para o navegador ou o app de arquivos (ele leva você direto à opção).
 4. Toque em **Instalar**.
 
-A página de todas as versões fica em [Releases](https://github.com/Netero-mac/afrodite-/releases).
+A página de todas as versões fica em [Releases](https://github.com/Netero-mac/Afrodite-/releases).
 
 ### Opção 2: pelo artefato do Actions
 
@@ -74,8 +74,8 @@ O botão **Voltar** nunca sai do launcher. O botão **Início** sempre volta par
 Requisitos: **JDK 17** e **Android SDK 35** (o Android Studio já instala os dois).
 
 ```bash
-git clone https://github.com/Netero-mac/afrodite-.git
-cd afrodite-
+git clone https://github.com/Netero-mac/Afrodite-.git
+cd Afrodite-
 ./gradlew assembleDebug          # gera app/build/outputs/apk/debug/app-debug.apk
 ./gradlew testDebugUnitTest      # roda os testes de unidade
 ```
