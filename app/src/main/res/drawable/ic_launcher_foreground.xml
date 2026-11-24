@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone do Afrodite: um "A" fino dentro de um anel, em dourado -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M30,54a24,24 0,1 0,48 0a24,24 0,1 0,-48 0"
+        android:strokeWidth="1.2"
+        android:strokeColor="#D4AF37" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M44,66L54,40L64,66M47.5,57L60.5,57"
+        android:strokeWidth="1.6"
+        android:strokeColor="#D4AF37"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
