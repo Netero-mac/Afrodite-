@@ -161,4 +161,8 @@ app/src/completo/               # só na versão completa: serviço de acessibil
 ## Observações
 
 - A chave `app/afrodite-debug.keystore` é uma **chave de debug** (senha `android`), pública de propósito, para os APKs do Actions instalarem por cima uns dos outros. Para publicar na Play Store, crie uma chave de release própria e não coloque essa chave no repositório.
-- A fonte Montserrat é distribuída sob a licença SIL Open Font License (veja `licenses/Montserrat-OFL.txt`).
+
+## Licença
+
+O código é distribuído sob a licença MIT. Veja [LICENSE](LICENSE).
+A fonte Montserrat segue a SIL Open Font License (veja `licenses/Montserrat-OFL.txt`).
